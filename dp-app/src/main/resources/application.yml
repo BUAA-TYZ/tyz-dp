@@ -1,2 +1,12 @@
 server:
   port: 8081
+spring:
+  data:
+    redis:
+      database: 0
+      host: localhost
+      port: 6379
+id:
+  snowflake:
+    datacenter-id: 0
+    worker-id: 0
