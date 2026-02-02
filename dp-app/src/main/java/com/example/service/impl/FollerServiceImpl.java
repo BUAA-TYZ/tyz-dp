@@ -1,5 +1,7 @@
 package com.example.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.dto.Result;
@@ -34,10 +36,12 @@ public class FollerServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 stringRedisTemplate.opsForSet().add(key, followUserId.toString());
             }
         } else {
-            remove(new LambdaQueryChainWrapper<Follow>()
-                    .eq(Follow::getUserId, userId))
-                    .eq(Follow::getFollowUserId, followUserId));
-            stringRedisTemplate.opsForSet().
+            boolean isSuccess = remove(new QueryWrapper<Follow>()
+                    .eq("user_id", userId).eq("follow_user_id", followUserId));
+            if (isSuccess) {
+                // 把关注用户的id从Redis集合中移除
+                stringRedisTemplate.opsForSet().remove(key, followUserId.toString());
+            }
         }
         return null;
     }
