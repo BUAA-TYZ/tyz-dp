@@ -12,7 +12,7 @@ services:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
       # 数据持久化
-      - mysql_data:/var/lib/mysql
+      - ./mysql_data:/var/lib/mysql
       # 初始化脚本（首次启动自动执行）
       - ./sql:/docker-entrypoint-initdb.d
   redis:
@@ -24,7 +24,7 @@ services:
     # 如果你不想要密码：把下面 command 改成 ["redis-server", "--appendonly", "yes"]
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "123456"]
     volumes:
-      - redis_data:/data
+      - ./redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "123456", "ping"]
       interval: 5s
@@ -52,10 +52,18 @@ services:
     networks:
       - rocketmq
     command: sh mqbroker
+  rocketmq-dashboard:
+    image: apacherocketmq/rocketmq-dashboard:latest
+    container_name: rocketmq-dashboard
+    ports:
+      - 8082:8082
+    environment:
+      - JAVA_OPTS=-Drocketmq.namesrv.addr=rmqnamesrv:9876
+    depends_on:
+      - namesrv
+    networks:
+      - rocketmq
+
 networks:
   rocketmq:
     driver: bridge
-
-volumes:
-  redis_data:
-  mysql_data:

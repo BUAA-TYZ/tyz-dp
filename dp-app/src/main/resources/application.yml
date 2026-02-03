@@ -1,12 +1,20 @@
 server:
   port: 8081
 spring:
+  application:
+    name: tyz-dp
   data:
     redis:
       database: 0
       host: localhost
       port: 6379
       password: 123456
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      jdbc-url: jdbc:mysql://127.0.0.1:3306/mydb?useSSL=false&serverTimezone=UTC
+      username: user
+      password: user
 id:
   snowflake:
     datacenter-id: 0

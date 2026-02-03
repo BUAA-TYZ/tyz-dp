@@ -16,6 +16,6 @@ public class IdGeneratorAutoConfig {
     @Bean
     public SnowflakeIdGenerator snowflakeIdGenerator(SnowflakeProperties snowflakeProperties) {
         return new SnowflakeIdGenerator(
-                snowflakeProperties.getDataCenterId(), snowflakeProperties.getDataCenterId(), DEFAULT_EPOCH_MILLIS);
+                snowflakeProperties.getDataCenterId(), snowflakeProperties.getWorkerId(), DEFAULT_EPOCH_MILLIS);
     }
 }
