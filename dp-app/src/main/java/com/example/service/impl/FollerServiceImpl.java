@@ -5,15 +5,23 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.dto.Result;
+import com.example.dto.UserDTO;
 import com.example.entity.Follow;
 import com.example.impl.SnowflakeIdGenerator;
 import com.example.mapper.FollowMapper;
 import com.example.service.IFollowService;
+import com.example.service.IUserService;
 import com.example.utils.RedisConstants;
 import com.example.utils.UserHolder;
 import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+@Service
 public class FollerServiceImpl extends ServiceImpl<FollowMapper, Follow> implements IFollowService {
 
     @Resource
@@ -21,6 +29,9 @@ public class FollerServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
 
     @Resource
     private SnowflakeIdGenerator snowflakeIdGenerator;
+
+    @Resource
+    private IUserService userService;
 
     @Override
     public Result follow(Long followUserId, Boolean isFollow) {
@@ -43,7 +54,7 @@ public class FollerServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 stringRedisTemplate.opsForSet().remove(key, followUserId.toString());
             }
         }
-        return null;
+        return Result.ok();
     }
 
     @Override
@@ -55,7 +66,24 @@ public class FollerServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     }
 
     @Override
-    public Result followCommons(Long id) {
-        return null;
+    public Result<List<UserDTO>> followCommons(Long id) {
+        Long userId = UserHolder.getUser().getId();
+        String myKey = RedisConstants.FOLLOWER_KEY + userId;
+        String otherKey = RedisConstants.FOLLOWER_KEY + id;
+        // 1. Set 求关注交集
+        Set<String> intersect = stringRedisTemplate.opsForSet().intersect(myKey, otherKey);
+        if (intersect == null || intersect.isEmpty()) {
+            return Result.ok(Collections.emptyList());
+        }
+        List<Long> commonIds = intersect.stream().map(Long::valueOf).toList();
+        // 2. 根据 id 查询关注者信息
+        List<UserDTO> users = userService.listByIds(commonIds).stream().map(user -> {
+            UserDTO userDTO = new UserDTO();
+            userDTO.setId(user.getId());
+            userDTO.setIcon(user.getIcon());
+            userDTO.setNickName(user.getNickName());
+            return userDTO;
+        }).toList();
+        return Result.ok(users);
     }
 }

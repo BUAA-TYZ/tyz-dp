@@ -5,7 +5,9 @@ import com.example.dto.Result;
 import com.example.entity.UserInfo;
 import com.example.mapper.UserInfoMapper;
 import com.example.service.IUserInfoService;
+import org.springframework.stereotype.Service;
 
+@Service
 public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> implements IUserInfoService {
     @Override
     public UserInfo getByUserId(Long userId) {

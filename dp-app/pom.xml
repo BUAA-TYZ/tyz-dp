@@ -39,6 +39,11 @@
             <artifactId>id-generator</artifactId>
             <version>${tyzVersion}</version>
         </dependency>
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>dp-redisson</artifactId>
+            <version>${tyzVersion}</version>
+        </dependency>
     </dependencies>
 
     <properties>
