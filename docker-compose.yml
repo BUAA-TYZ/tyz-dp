@@ -51,6 +51,8 @@ services:
       - namesrv
     networks:
       - rocketmq
+    volumes:
+      - ./rocketmq/store:/home/rocketmq/store
     command: sh mqbroker
   rocketmq-dashboard:
     image: apacherocketmq/rocketmq-dashboard:latest

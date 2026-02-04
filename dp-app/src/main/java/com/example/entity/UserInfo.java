@@ -20,13 +20,9 @@ public class UserInfo implements Serializable {
 
     /**
      * 主键
-     */
-    @TableId(value = "id")
-    private Long id;
-
-    /**
      * 用户id
      */
+    @TableId(value = "user_id")
     private Long userId;
 
     /**

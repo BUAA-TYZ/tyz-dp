@@ -11,6 +11,7 @@ import com.example.mapper.ShopMapper;
 import com.example.service.IShopService;
 import com.example.utils.RedisConstants;
 import com.example.utils.SystemConstants;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBloomFilter;
@@ -19,6 +20,7 @@ import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -36,6 +38,20 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
     @Resource
     private RedissonClient redissonClient;
+
+    @PostConstruct
+    public void initBloomFilter() {
+        // 初始化
+        List<Long> shopIds = lambdaQuery()
+                .select(Shop::getId)
+                .list()
+                .stream()
+                .map(Shop::getId)
+                .toList();
+        shopBloomFilter.add(shopIds);
+        log.info("布隆过滤器初始化完成，当前商铺数量：{}", shopIds.size());
+    }
+
 
     @Override
     public Result<Long> saveShop(Shop shop) {

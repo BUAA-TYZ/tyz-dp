@@ -2,6 +2,8 @@ package com.example.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -9,7 +11,10 @@ import com.example.dto.LoginFormDTO;
 import com.example.dto.Result;
 import com.example.dto.UserDTO;
 import com.example.entity.User;
+import com.example.entity.UserInfo;
+import com.example.impl.SnowflakeIdGenerator;
 import com.example.mapper.UserMapper;
+import com.example.service.IUserInfoService;
 import com.example.service.IUserService;
 import com.example.utils.RedisConstants;
 import com.example.utils.RegexUtils;
@@ -19,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +35,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private SnowflakeIdGenerator snowflakeIdGenerator;
+
+    @Resource
+    private IUserInfoService userInfoService;
 
     @Override
     public Result<String> sendCode(String phone, HttpSession session) {
@@ -50,11 +62,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
         // 2. 验证码正确性判断
         String code = stringRedisTemplate.opsForValue().get(RedisConstants.LOGIN_CODE_KEY + phone);
-        if (code == null || code.equals(loginForm.getCode())) {
+        if (code == null || !code.equals(loginForm.getCode())) {
             return Result.fail("验证码不正确");
         }
         // 3. **如果用户不存在则注册**
-        User user = getOne(query().eq("phone", phone));
+        User user = query().eq("phone", phone).one();
         if (user == null) {
             user = createUserByPhone(phone);
         }
@@ -68,6 +80,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         stringRedisTemplate.opsForHash().putAll(RedisConstants.LOGIN_USER_KEY + token, map);
         stringRedisTemplate.expire(RedisConstants.LOGIN_USER_KEY + token,
                 RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);
+        log.info("用户登录成功，用户ID：{} token: {}", user.getId(), token);
         return Result.ok(token);
     }
 
@@ -83,9 +96,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     private User createUserByPhone(String phone) {
         User user = new User();
+        user.setId(snowflakeIdGenerator.nextId());
         user.setPhone(phone);
         user.setNickName("user_" + RandomUtil.randomString(10));
         save(user);
+        UserInfo userInfo = new UserInfo();
+        userInfo.setUserId(user.getId());
+        userInfo.setGender(RandomUtil.randomBoolean());
+        userInfo.setBirthday(LocalDate.from(DateUtil.toLocalDateTime(RandomUtil.randomDate(null, DateField.MONTH, 1, 24))));
+        userInfo.setLevel(1);
+        userInfoService.save(userInfo);
         return user;
     }
 }
